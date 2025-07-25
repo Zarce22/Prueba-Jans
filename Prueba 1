@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TELUS Digital Data Organizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4B0082;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .summary {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4B0082;
+        }
+        .removed-columns {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .data-table {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        th {
+            background-color: #4B0082;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+        .total-row {
+            background-color: #e6f3ff !important;
+            font-weight: bold;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            background-color: #4B0082;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #5a1a8b;
+        }
+        .filter-input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: #ffeb3b !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 TELUS Digital Performance Data - Organized</h1>
+       
+        <div class="summary" id="summary">
+            <h3>📈 Data Summary</h3>
+            <p>Processing data...</p>
+        </div>
+
+        <div class="removed-columns" id="removedColumns">
+            <h3>🗑️ Removed Columns (All Zeros)</h3>
+            <p>Identifying columns with all zeros...</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="filterInput" class="filter-input" placeholder="Filter by employee name..." onkeyup="filterTable()">
+            <button onclick="exportToCSV()">📥 Export CSV</button>
+            <button onclick="resetFilter()">🔄 Reset Filter</button>
+        </div>
+
+        <div class="data-table">
+            <table id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Raw data from the user
+        const rawData = `Locale Selection All RGU Cohort Total PPH HH Created TV Attach Rate (%) Wifi Attach Rate (%) Conv.  Core RGU Conv.  RGU+VG Total Interactions HSIA TV TV (East) SHS Smartphones K-HSIA wHSIA 2025 Core RGU SL TOS Wifi Plus SWS LWC Total VG Total # Cancelled Orders Total FFH RGU Sales HSIA (ILEC) HSIA - EAST TOS_co SHS_co HSIA_co LWC_co LWC_co wHSIA_co TV_co SL_co sap_ID Go-Send Count Product Volume Sales Utilization Submitted Leads Total # Cancelled Orders
+Grand Total Total Total 0 9 36.40% 0.00% 2.20% 3.10% 1,385 11 8 0 5 6 0 0 30 5 3 5 0 0 8 0 35 0 0 0 0 0 0 0 0 0 0 * 1 45 0 0
+TELUS Digital Alejandro Jose Morales Garcia P2P-L 0 0 0.00% 0.00% 0.90% 1.70% 233 1 1 0 0 0 0 0 2 0 1 1 0 0 2 0 2 0 0 0 0 0 0 0 0 0 0 330,246 0 4 0 0
+TELUS Digital Allan Keneth Ceron Diaz P2P-H 0 0 0.00% 0.00% 1.70% 2.20% 180 2 0 0 0 1 0 0 3 1 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 326,944 1 4 0 0
+TELUS Digital Annette Baldizon G2G 0 4 33.30% 0.00% 5.70% 8.10% 123 3 1 0 2 1 0 0 7 1 0 2 0 0 2 0 8 0 0 0 0 0 0 0 0 0 0 222,558 0 11 0 0
+TELUS Digital Bianka Janira Polanco Davila P2P-L 0 1 0.00% 0.00% 1.00% 2.00% 98 0 0 0 0 1 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 332,247 0 3 0 0
+TELUS Digital Diana Nicole Galvez Rodriguez PO1 0 1 0.00% 0.00% 0.00% 0.00% 64 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 278,488 0 0 0 0
+TELUS Digital Dora Annaby Vasquez Rodriguez G2G 0 0 100.00% 0.00% 5.80% 9.60% 104 1 2 0 3 0 0 0 6 2 1 1 0 0 2 0 8 0 0 0 0 0 0 0 0 0 0 181,149 0 10 0 0
+TELUS Digital Edgar Andres Vasquez Garcia PO1 0 1 0.00% 0.00% 0.00% 0.00% 126 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 330,810 0 0 0 0
+TELUS Digital Fernanda Isabel Obispo Garcia PO1 0 0 0.00% 0.00% 0.00% 0.00% 37 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 293,676 0 0 0 0
+TELUS Digital Herson Alejandro Ambrosio Gutierrez P2P-L 0 1 0.00% 0.00% 1.00% 1.00% 98 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 272,002 0 1 0 0
+TELUS Digital Javier Alexander Burrión Semeyá P2P-L 0 0 0.00% 0.00% 0.60% 0.60% 159 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 264,675 0 1 0 0
+TELUS Digital Jorge Humberto Melendez Elvira PO1 0 0 0.00% 0.00% 0.00% 0.00% 7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 357,595 0 0 0 0
+TELUS Digital Manuel Arturo Castillo Bermudez P2P-L 0 0 100.00% 0.00% 4.30% 6.50% 46 1 1 0 0 0 0 0 2 1 0 0 0 0 0 0 3 0 0 0 0 0 0 0 0 0 0 273,371 0 3 0 0
+TELUS Digital Maynor  David Azurdia Diaz JBA 0 1 33.30% 0.00% 6.40% 7.30% 110 3 1 0 0 3 0 0 7 0 1 0 0 0 1 0 7 0 0 0 0 0 0 0 0 0 0 276,790 0 8 0 0`;
+
+        let originalData = [];
+        let cleanData = [];
+        let cleanHeaders = [];
+        let removedColumns = [];
+
+        function processData() {
+            // Parse the raw data
+            const lines = rawData.trim().split('\n');
+            const headers = lines[0].split('\t');
+            const rows = lines.slice(1).map(line => line.split('\t'));
+
+            // Create structured data
+            originalData = rows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
+                });
+                return obj;
+            });
+
+            // Identify columns with all zeros
+            removedColumns = [];
+            headers.forEach(header => {
+                const allZeros = originalData.every(row => {
+                    const value = row[header];
+                    return value === '0' || value === '0.00%' || value === '' || value === '*';
+                });
+               
+                if (allZeros) {
+                    removedColumns.push(header);
+                }
+            });
+
+            // Create clean data without zero columns
+            cleanHeaders = headers.filter(header => !removedColumns.includes(header));
+            cleanData = originalData.map(row => {
+                const cleanRow = {};
+                cleanHeaders.forEach(header => {
+                    cleanRow[header] = row[header];
+                });
+                return cleanRow;
+            });
+
+            updateSummary();
+            updateRemovedColumns();
+            renderTable();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary');
+            summaryDiv.innerHTML = `
+                <h3>📈 Data Summary</h3>
+                <p><strong>Original columns:</strong> ${Object.keys(originalData[0] || {}).length}</p>
+                <p><strong>Columns removed:</strong> ${removedColumns.length}</p>
+                <p><strong>Remaining columns:</strong> ${cleanHeaders.length}</p>
+                <p><strong>Total employees:</strong> ${cleanData.length - 1} (excluding Grand Total row)</p>
+                <p><strong>Data processed:</strong> ✅ Complete</p>
+            `;
+        }
+
+        function updateRemovedColumns() {
+            const removedDiv = document.getElementById('removedColumns');
+            if (removedColumns.length > 0) {
+                removedDiv.innerHTML = `
+                    <h3>🗑️ Removed Columns (All Zeros)</h3>
+                    <p><strong>The following ${removedColumns.length} columns were removed because they contained only zeros:</strong></p>
+                    <ul>
+                        ${removedColumns.map(col => `<li>${col}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                removedDiv.innerHTML = `
+                    <h3>🗑️ Removed Columns</h3>
+                    <p>No columns were removed - all columns contain meaningful data.</p>
+                `;
+            }
+        }
+
+        function renderTable() {
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+
+            // Create header
+            tableHead.innerHTML = `
+                <tr>
+                    ${cleanHeaders.map(header => `<th>${header}</th>`).join('')}
+                </tr>
+            `;
+
+            // Create body
+            tableBody.innerHTML = cleanData.map((row, index) => {
+                const isGrandTotal = row['Selection'] === 'Total';
+                return `
+                    <tr class="${isGrandTotal ? 'total-row' : ''}">
+                        ${cleanHeaders.map(header => `<td>${row[header] || ''}</td>`).join('')}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTable() {
+            const filterValue = document.getElementById('filterInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#tableBody tr');
+           
+            rows.forEach(row => {
+                const employeeName = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+                if (employeeName.includes(filterValue) || filterValue === '') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function resetFilter() {
+            document.getElementById('filterInput').value = '';
+            filterTable();
+        }
+
+        function exportToCSV() {
+            const csvContent = [cleanHeaders.join(',')].concat(
+                cleanData.map(row =>
+                    cleanHeaders.map(header => {
+                        const value = row[header] || '';
+                        return value.includes(',') || value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
+                    }).join(',')
+                )
+            ).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'telus_organized_data.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            processData();
+        });
+    </script>
+</body>
+</html>
